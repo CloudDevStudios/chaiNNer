@@ -91,11 +91,10 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
                 ]
         # style truncation
         if truncation < 1:
-            style_truncation = []
-            for style in styles:
-                style_truncation.append(
-                    truncation_latent + truncation * (style - truncation_latent)
-                )
+            style_truncation = [
+                truncation_latent + truncation * (style - truncation_latent)
+                for style in styles
+            ]
             styles = style_truncation
         # get style latents with injection
         if len(styles) == 1:
@@ -146,10 +145,7 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
 
         image = skip
 
-        if return_latents:
-            return image, latent
-        else:
-            return image, None
+        return (image, latent) if return_latents else (image, None)
 
 
 class ConvUpLayer(nn.Module):
@@ -386,10 +382,7 @@ class GFPGANv1(nn.Module):
         self.condition_shift = nn.ModuleList()
         for i in range(3, self.log_size + 1):
             out_channels = channels[f"{2**i}"]
-            if sft_half:
-                sft_out_channels = out_channels
-            else:
-                sft_out_channels = out_channels * 2
+            sft_out_channels = out_channels if sft_half else out_channels * 2
             self.condition_scale.append(
                 nn.Sequential(
                     EqualConv2d(
@@ -560,7 +553,4 @@ class FacialComponentDiscriminator(nn.Module):
             rlt_feats.append(feat.clone())
         out = self.final_conv(feat)
 
-        if return_feats:
-            return out, rlt_feats
-        else:
-            return out, None
+        return (out, rlt_feats) if return_feats else (out, None)

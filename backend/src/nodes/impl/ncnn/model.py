@@ -243,9 +243,7 @@ class NcnnParamCollection:
             pass
 
     def __contains__(self, item) -> bool:
-        if item in self.param_dict:
-            return True
-        return False
+        return item in self.param_dict
 
     def __str__(self) -> str:
         output = ""
@@ -266,16 +264,16 @@ class NcnnParamCollection:
 
                 # If a param that defaults to the value of another param, if it's value
                 # equals that of the second param or its default, skip writing it
-                if (
-                    v.value == self.param_dict[pid].value
-                    or v.value == self.param_dict[pid].default
-                ):
+                if v.value in [
+                    self.param_dict[pid].value,
+                    self.param_dict[pid].default,
+                ]:
                     continue
 
             if isinstance(v.value, list):
-                output += " -233" + v.id.zfill(2) + "="
+                output += f" -233{v.id.zfill(2)}="
             else:
-                output += " " + v.id + "="
+                output += f" {v.id}="
 
             if isinstance(v.value, float):
                 v_str = np.format_float_scientific(v.value, 6, False, exp_digits=2)
@@ -371,9 +369,9 @@ class NcnnModel:
 
     @staticmethod
     def load_from_file(param_path: str = "", bin_path: str = "") -> "NcnnModel":
-        if bin_path == "":
+        if not bin_path:
             bin_path = param_path.replace(".param", ".bin")
-        elif param_path == "":
+        elif not param_path:
             param_path = bin_path.replace(".bin", ".param")
 
         model = NcnnModel()
@@ -398,12 +396,11 @@ class NcnnModel:
     def interp_layers(
         a: NcnnLayer, b: NcnnLayer, alpha_a: float
     ) -> Tuple[NcnnLayer, bytes]:
-        weights_a = a.weight_data
-        weights_b = b.weight_data
         weights_interp: Dict[str, NcnnWeight] = {}
         layer_bytes = b""
 
-        if weights_a:
+        if weights_a := a.weight_data:
+            weights_b = b.weight_data
             assert len(weights_a) == len(
                 weights_b
             ), "All corresponding nodes must have same number of weights"
@@ -477,8 +474,8 @@ class NcnnModel:
         num_outputs = int(param_list[3])
         input_end = 4 + num_inputs
         output_end = input_end + num_outputs
-        inputs = [i for i in param_list[4:input_end]]
-        outputs = [o for o in param_list[input_end:output_end]]
+        inputs = list(param_list[4:input_end])
+        outputs = list(param_list[input_end:output_end])
 
         params = param_list[output_end:]
         param_dict = {}
@@ -529,18 +526,17 @@ class NcnnModel:
             weight_dict["variance"] = NcnnWeight(variance)
             bias = np.frombuffer(binf.read(channels_data), np.float32)
             weight_dict["bias"] = NcnnWeight(bias)
-        elif op_type in ("Convolution", "ConvolutionDepthWise"):
+        elif op_type in {"Convolution", "ConvolutionDepthWise"}:
             quantize_tag = binf.read(4)
             dtype = DTYPE_DICT[quantize_tag]
             weight_data_length = checked_cast(int, layer.params[6].value)
+            has_bias = layer.params[5].value
+
             weight_data_size = (
                 weight_data_length * 2
                 if quantize_tag == DTYPE_FP16
                 else weight_data_length * 4
             )
-
-            has_bias = layer.params[5].value
-
             num_filters = checked_cast(int, layer.params[0].value)
             kernel_w = checked_cast(int, layer.params[1].value)
             kernel_h = checked_cast(int, layer.params[11].value)
@@ -622,10 +618,9 @@ class NcnnModel:
             slope_data_size = num_slope * 4
             slope_data = np.frombuffer(binf.read(slope_data_size), np.float32)
             weight_dict["slope"] = NcnnWeight(slope_data)
-        else:
-            if len(layer.params.weight_order) != 0:
-                error_msg = f"Load weights not added for {op_type} yet, please report"
-                raise ValueError(error_msg)
+        elif len(layer.params.weight_order) != 0:
+            error_msg = f"Load weights not added for {op_type} yet, please report"
+            raise ValueError(error_msg)
 
         return weight_dict
 
@@ -648,17 +643,15 @@ class NcnnModel:
                 if layer.outputs:
                     p.write(f" {' '.join(layer.outputs)}")
                 if layer.params.param_dict:
-                    param_str = str(layer.params)
-                    if param_str:
+                    if param_str := str(layer.params):
                         p.write(f"{param_str}")
                 p.write("\n")
 
-            if filename:
-                with open(filename, "w", encoding="utf-8") as f:
-                    f.write(p.getvalue())
-                return ""
-            else:
+            if not filename:
                 return p.getvalue()
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(p.getvalue())
+            return ""
 
     def serialize_weights(self) -> bytes:
         layer_weights = [

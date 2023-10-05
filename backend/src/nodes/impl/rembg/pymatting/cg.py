@@ -65,11 +65,7 @@ def cg(
 
     norm_b = np.linalg.norm(b)
 
-    if callable(A):
-        r = b - A(x)
-    else:
-        r = b - A.dot(x)
-
+    r = b - A(x) if callable(A) else b - A.dot(x)
     norm_r = np.linalg.norm(r)
 
     if norm_r < atol or norm_r < rtol * norm_b:
@@ -82,11 +78,7 @@ def cg(
     for _ in range(maxiter):
         r_old = r.copy()
 
-        if callable(A):
-            Ap = A(p)
-        else:
-            Ap = A.dot(p)
-
+        Ap = A(p) if callable(A) else A.dot(p)
         alpha = rz / np.inner(p, Ap)
         x += alpha * p
         r -= alpha * Ap

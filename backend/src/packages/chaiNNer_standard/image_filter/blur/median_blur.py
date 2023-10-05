@@ -27,8 +27,7 @@ def median_blur_node(
 ) -> np.ndarray:
     if radius == 0:
         return img
-    else:
-        if radius < 3:
-            return cv2.medianBlur(img, 2 * radius + 1)
-        else:  # cv2 requires uint8 for kernel size (2r+1) > 5
-            return cv2.medianBlur(to_uint8(img, normalized=True), 2 * radius + 1)
+    if radius < 3:
+        return cv2.medianBlur(img, 2 * radius + 1)
+    else:  # cv2 requires uint8 for kernel size (2r+1) > 5
+        return cv2.medianBlur(to_uint8(img, normalized=True), 2 * radius + 1)

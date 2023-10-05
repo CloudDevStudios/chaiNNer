@@ -43,6 +43,4 @@ def crop_offsets_node(
     assert top < h, "Cropped area would result in an image with no height"
     assert left < w, "Cropped area would result in an image with no width"
 
-    result = img[top : top + height, left : left + width]
-
-    return result
+    return img[top : top + height, left : left + width]

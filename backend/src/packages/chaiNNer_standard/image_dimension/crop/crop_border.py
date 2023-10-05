@@ -40,6 +40,4 @@ def border_crop_node(img: np.ndarray, amount: int) -> np.ndarray:
     assert 2 * amount < h, "Cropped area would result in an image with no height"
     assert 2 * amount < w, "Cropped area would result in an image with no width"
 
-    result = img[amount : h - amount, amount : w - amount]
-
-    return result
+    return img[amount : h - amount, amount : w - amount]

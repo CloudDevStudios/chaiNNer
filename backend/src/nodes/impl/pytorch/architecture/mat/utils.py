@@ -123,11 +123,11 @@ def _bias_act_ref(x, b=None, dim=1, act="linear", alpha=None, gain=None, clamp=N
         x = x + b.reshape([-1 if i == dim else 1 for i in range(x.ndim)]).to(x.device)
 
     # Evaluate activation function.
-    alpha = float(alpha)
+    alpha = alpha
     x = spec.func(x, alpha=alpha)
 
     # Scale by gain.
-    gain = float(gain)
+    gain = gain
     if gain != 1:
         x = x * gain
 
@@ -240,8 +240,7 @@ def _get_filter_size(f):
 
 
 def _get_weight_shape(w):
-    shape = [int(sz) for sz in w.shape]
-    return shape
+    return [int(sz) for sz in w.shape]
 
 
 def _parse_scaling(scaling):
@@ -268,9 +267,7 @@ def _parse_padding(padding):
 
 def _ntuple(n):
     def parse(x):
-        if isinstance(x, collections.abc.Iterable):
-            return x
-        return tuple(repeat(x, n))
+        return x if isinstance(x, collections.abc.Iterable) else tuple(repeat(x, n))
 
     return parse
 
@@ -448,13 +445,12 @@ class FullyConnectedLayer(torch.nn.Module):
         if self.activation == "linear" and b is not None:
             # out = torch.addmm(b.unsqueeze(0), x, w.t())
             x = x.matmul(w.t().to(x.device))
-            out = x + b.reshape(
+            return x + b.reshape(
                 [-1 if i == x.ndim - 1 else 1 for i in range(x.ndim)]
             ).to(x.device)
         else:
             x = x.matmul(w.t().to(x.device))
-            out = bias_act(x, b, act=self.activation, dim=x.ndim - 1).to(x.device)
-        return out
+            return bias_act(x, b, act=self.activation, dim=x.ndim - 1).to(x.device)
 
 
 def _conv2d_wrapper(
@@ -692,7 +688,6 @@ class Conv2dLayer(torch.nn.Module):
 
         act_gain = self.act_gain * gain
         act_clamp = self.conv_clamp * gain if self.conv_clamp is not None else None
-        out = bias_act(
+        return bias_act(
             x, self.bias, act=self.activation, gain=act_gain, clamp=act_clamp
         )
-        return out

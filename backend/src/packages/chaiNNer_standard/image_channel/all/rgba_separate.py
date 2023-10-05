@@ -59,10 +59,6 @@ def separate_rgba(
 
     c = min(c, 4)
 
-    out = []
-    for i in range(c):
-        out.append(img[:, :, i])
-    for i in range(4 - c):
-        out.append(safe_out)
-
+    out = [img[:, :, i] for i in range(c)]
+    out.extend(safe_out for _ in range(4 - c))
     return out[2], out[1], out[0], out[3]

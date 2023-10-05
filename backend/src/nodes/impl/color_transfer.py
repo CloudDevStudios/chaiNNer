@@ -50,12 +50,10 @@ def min_max_scale(img: np.ndarray, new_range=(0, 255)):
     if mn < new_range[0] or mx > new_range[1]:
         # Perform min-max scaling
         range_diff = new_range[1] - new_range[0]
-        scaled = range_diff * (img - mn) / (mx - mn) + new_range[0]
+        return range_diff * (img - mn) / (mx - mn) + new_range[0]
     else:
         # Return array if already in range
-        scaled = img
-
-    return scaled
+        return img
 
 
 def scale_array(
@@ -70,12 +68,9 @@ def scale_array(
     """
 
     if overflow_method == OverflowMethod.CLIP:
-        scaled = np.clip(arr, clip_min, clip_max)
-    else:
-        scale_range = (max([arr.min(), clip_min]), min([arr.max(), clip_max]))
-        scaled = min_max_scale(arr, new_range=scale_range)
-
-    return scaled
+        return np.clip(arr, clip_min, clip_max)
+    scale_range = (max([arr.min(), clip_min]), min([arr.max(), clip_max]))
+    return min_max_scale(arr, new_range=scale_range)
 
 
 def color_transfer(

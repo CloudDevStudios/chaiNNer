@@ -21,9 +21,7 @@ class Seed:
 
         If the current seed is not within the given range, a value within the range will be derived from the current seed.
         """
-        if a <= self.value <= b:
-            return self.value
-        return Random(self.value).randint(a, b)
+        return self.value if a <= self.value <= b else Random(self.value).randint(a, b)
 
     def to_u32(self) -> int:
         """

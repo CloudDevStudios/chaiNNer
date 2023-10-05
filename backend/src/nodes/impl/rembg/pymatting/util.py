@@ -25,8 +25,7 @@ def sanity_check_image(image):
 
     if len(image.shape) != 3 or image.shape[2] != 3:
         warnings.warn(
-            "Expected RGB image of shape (?, ?, 3), but image.shape is %s."
-            % str(image.shape),
+            f"Expected RGB image of shape (?, ?, 3), but image.shape is {str(image.shape)}.",
             stacklevel=3,
         )
 
@@ -35,20 +34,19 @@ def sanity_check_image(image):
 
     if min_value < 0.0:
         warnings.warn(
-            "Image values should be in [0, 1], but image.min() is %s." % min_value,
+            f"Image values should be in [0, 1], but image.min() is {min_value}.",
             stacklevel=3,
         )
 
     if max_value > 1.0:
         warnings.warn(
-            "Image values should be in [0, 1], but image.max() is %s." % max_value,
+            f"Image values should be in [0, 1], but image.max() is {max_value}.",
             stacklevel=3,
         )
 
     if image.dtype not in [np.float32, np.float64]:
         warnings.warn(
-            "Unexpected image.dtype %s. Are you sure that you do not want to use np.float32 or np.float64 instead?"
-            % image.dtype,
+            f"Unexpected image.dtype {image.dtype}. Are you sure that you do not want to use np.float32 or np.float64 instead?",
             stacklevel=3,
         )
 
@@ -127,20 +125,19 @@ def trimap_split(trimap, flatten=True, bg_threshold=0.1, fg_threshold=0.9):
 
     if min_value < 0.0:
         warnings.warn(
-            "Trimap values should be in [0, 1], but trimap.min() is %s." % min_value,
+            f"Trimap values should be in [0, 1], but trimap.min() is {min_value}.",
             stacklevel=3,
         )
 
     if max_value > 1.0:
         warnings.warn(
-            "Trimap values should be in [0, 1], but trimap.max() is %s." % min_value,
+            f"Trimap values should be in [0, 1], but trimap.max() is {min_value}.",
             stacklevel=3,
         )
 
     if trimap.dtype not in [np.float32, np.float64]:
         warnings.warn(
-            "Unexpected trimap.dtype %s. Are you sure that you do not want to use np.float32 or np.float64 instead?"
-            % trimap.dtype,
+            f"Unexpected trimap.dtype {trimap.dtype}. Are you sure that you do not want to use np.float32 or np.float64 instead?",
             stacklevel=3,
         )
 

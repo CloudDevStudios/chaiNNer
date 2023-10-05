@@ -30,12 +30,10 @@ def open_image_node(img: np.ndarray) -> None:
     logger.debug(f"Writing image to temp path: {tempdir}")
     im_name = f"{time.time()}.png"
     temp_save_dir = os.path.join(tempdir, im_name)
-    status = cv2.imwrite(
+    if status := cv2.imwrite(
         temp_save_dir,
         to_uint8(img, normalized=True),
-    )
-
-    if status:
+    ):
         if platform.system() == "Darwin":  # macOS
             subprocess.call(("open", temp_save_dir))
         elif platform.system() == "Windows":  # Windows

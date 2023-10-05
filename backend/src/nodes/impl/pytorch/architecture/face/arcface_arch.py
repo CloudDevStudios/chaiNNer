@@ -216,7 +216,7 @@ class ResNetArcFace(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.xavier_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d):
+            elif isinstance(m, (nn.BatchNorm2d, nn.BatchNorm1d)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
@@ -236,14 +236,12 @@ class ResNetArcFace(nn.Module):
                 ),
                 nn.BatchNorm2d(planes * block.expansion),
             )
-        layers = []
-        layers.append(
-            block(self.inplanes, planes, stride, downsample, use_se=self.use_se)
-        )
+        layers = [block(self.inplanes, planes, stride, downsample, use_se=self.use_se)]
         self.inplanes = planes
-        for _ in range(1, num_blocks):
-            layers.append(block(self.inplanes, planes, use_se=self.use_se))
-
+        layers.extend(
+            block(self.inplanes, planes, use_se=self.use_se)
+            for _ in range(1, num_blocks)
+        )
         return nn.Sequential(*layers)
 
     def forward(self, x):

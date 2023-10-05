@@ -40,14 +40,12 @@ OnnxModel = Union[OnnxGeneric, OnnxRemBg]
 
 
 def is_rembg_model(model_as_bytes: bytes) -> bool:
-    if (
+    return (
         U2NET_STANDARD.search(model_as_bytes[-600:]) is not None
         or U2NET_CLOTH.search(model_as_bytes[-1000:]) is not None
         or U2NET_SILUETA.search(model_as_bytes[-600:]) is not None
         or U2NET_ISNET.search(model_as_bytes[:10000]) is not None
-    ):
-        return True
-    return False
+    )
 
 
 def load_onnx_model(model_as_bytes: bytes) -> OnnxModel:
@@ -56,10 +54,8 @@ def load_onnx_model(model_as_bytes: bytes) -> OnnxModel:
         or U2NET_SILUETA.search(model_as_bytes[-600:]) is not None
         or U2NET_ISNET.search(model_as_bytes[:10000]) is not None
     ):
-        model = OnnxRemBg(model_as_bytes)
+        return OnnxRemBg(model_as_bytes)
     elif U2NET_CLOTH.search(model_as_bytes[-1000:]) is not None:
-        model = OnnxRemBg(model_as_bytes, scale_height=3)
+        return OnnxRemBg(model_as_bytes, scale_height=3)
     else:
-        model = OnnxGeneric(model_as_bytes)
-
-    return model
+        return OnnxGeneric(model_as_bytes)

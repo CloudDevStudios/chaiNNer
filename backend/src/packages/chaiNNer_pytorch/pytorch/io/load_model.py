@@ -67,10 +67,7 @@ def load_model_node(path: str) -> Tuple[PyTorchModel, str, str]:
         if not hasattr(model, "supports_fp16"):
             model.supports_fp16 = False  # type: ignore
         should_use_fp16 = exec_options.fp16 and model.supports_fp16
-        if should_use_fp16:
-            model = model.half()
-        else:
-            model = model.float()
+        model = model.half() if should_use_fp16 else model.float()
     except Exception as e:
         raise ValueError(
             f"Model {os.path.basename(path)} is unsupported by chaiNNer. Please try another."

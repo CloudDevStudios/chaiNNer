@@ -236,7 +236,4 @@ def estimate_foreground_ml(
         gradient_weight,
     )
 
-    if return_background:
-        return foreground, background
-
-    return foreground
+    return (foreground, background) if return_background else foreground

@@ -74,9 +74,7 @@ __ABBREVIATIONS = {"rgb", "rgba"}
 
 
 def smart_capitalize(word: str) -> str:
-    if word in __ABBREVIATIONS:
-        return word.upper()
-    return word.capitalize()
+    return word.upper() if word in __ABBREVIATIONS else word.capitalize()
 
 
 def join_space_case(words: List[str]) -> str:
@@ -127,9 +125,7 @@ class Padding:
 
     @staticmethod
     def to(value: Padding | int) -> Padding:
-        if isinstance(value, int):
-            return Padding.all(value)
-        return value
+        return Padding.all(value) if isinstance(value, int) else value
 
     @property
     def horizontal(self) -> int:

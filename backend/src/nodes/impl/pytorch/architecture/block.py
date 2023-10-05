@@ -19,12 +19,12 @@ def act(act_type: str, inplace=True, neg_slope=0.2, n_prelu=1):
     # neg_slope: for leakyrelu and init of prelu
     # n_prelu: for p_relu num_parameters
     act_type = act_type.lower()
-    if act_type == "relu":
-        layer = nn.ReLU(inplace)
-    elif act_type == "leakyrelu":
+    if act_type == "leakyrelu":
         layer = nn.LeakyReLU(neg_slope, inplace)
     elif act_type == "prelu":
         layer = nn.PReLU(num_parameters=n_prelu, init=neg_slope)
+    elif act_type == "relu":
+        layer = nn.ReLU(inplace)
     else:
         raise NotImplementedError(
             "activation layer [{:s}] is not found".format(act_type)
@@ -65,8 +65,7 @@ def pad(pad_type: str, padding):
 
 def get_valid_padding(kernel_size, dilation):
     kernel_size = kernel_size + (kernel_size - 1) * (dilation - 1)
-    padding = (kernel_size - 1) // 2
-    return padding
+    return (kernel_size - 1) // 2
 
 
 class ConcatBlock(nn.Module):
@@ -76,13 +75,12 @@ class ConcatBlock(nn.Module):
         self.sub = submodule
 
     def forward(self, x):
-        output = torch.cat((x, self.sub(x)), dim=1)
-        return output
+        return torch.cat((x, self.sub(x)), dim=1)
 
     def __repr__(self):
         tmpstr = "Identity .. \n|"
         modstr = self.sub.__repr__().replace("\n", "\n|")
-        tmpstr = tmpstr + modstr
+        tmpstr += modstr
         return tmpstr
 
 
@@ -93,13 +91,12 @@ class ShortcutBlock(nn.Module):
         self.sub = submodule
 
     def forward(self, x):
-        output = x + self.sub(x)
-        return output
+        return x + self.sub(x)
 
     def __repr__(self):
         tmpstr = "Identity + \n|"
         modstr = self.sub.__repr__().replace("\n", "\n|")
-        tmpstr = tmpstr + modstr
+        tmpstr += modstr
         return tmpstr
 
 
@@ -115,7 +112,7 @@ class ShortcutBlockSPSR(nn.Module):
     def __repr__(self):
         tmpstr = "Identity + \n|"
         modstr = self.sub.__repr__().replace("\n", "\n|")
-        tmpstr = tmpstr + modstr
+        tmpstr += modstr
         return tmpstr
 
 
@@ -128,8 +125,7 @@ def sequential(*args):
     modules = []
     for module in args:
         if isinstance(module, nn.Sequential):
-            for submodule in module.children():
-                modules.append(submodule)
+            modules.extend(iter(module.children()))
         elif isinstance(module, nn.Module):
             modules.append(module)
     return nn.Sequential(*modules)
@@ -440,10 +436,7 @@ class ResidualDenseBlock_5C(nn.Module):
             mode=mode,
             c2x2=c2x2,
         )
-        if mode == "CNA":
-            last_act = None
-        else:
-            last_act = act_type
+        last_act = None if mode == "CNA" else act_type
         self.conv5 = conv_block(
             nf + 4 * gc,
             nf,

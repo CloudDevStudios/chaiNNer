@@ -47,11 +47,7 @@ def color_transfer_node(
 
     _, _, img_c = get_h_w_c(img)
 
-    # Preserve alpha
-    alpha = None
-    if img_c == 4:
-        alpha = img[:, :, 3]
-
+    alpha = img[:, :, 3] if img_c == 4 else None
     transfer = color_transfer(
         img, ref_img, colorspace, overflow_method, reciprocal_scale
     )

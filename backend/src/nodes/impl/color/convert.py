@@ -49,12 +49,10 @@ def get_shortest_path(
         start: __ProcessingItem(cost=0, path=[start]),
     }
 
-    while len(front) > 0:
+    while front:
         best = None
         for x in front.values():
-            if best is None:
-                best = x
-            elif x.cost < best.cost:
+            if best is None or x.cost < best.cost:
                 best = x
         assert best is not None
 
@@ -73,12 +71,11 @@ def get_shortest_path(
                     new_path = best.path.copy()
                     new_path.append(to)
                     front[to] = __ProcessingItem(cost=cost, path=new_path)
-            else:
-                if old.cost > cost:
-                    old.cost = cost
-                    old.path.clear()
-                    old.path.extend(best.path)
-                    old.path.append(to)
+            elif old.cost > cost:
+                old.cost = cost
+                old.path.clear()
+                old.path.extend(best.path)
+                old.path.append(to)
 
 
 __conversions_map: Dict[ColorSpace, List[Conversion]] = {}
@@ -119,11 +116,14 @@ def convert(
         curr_in = path[i - 1]
         curr_out = path[i]
 
-        conv = None
-        for c in __conversions_map.get(curr_in, []):
-            if c.output == curr_out:
-                conv = c
-                break
+        conv = next(
+            (
+                c
+                for c in __conversions_map.get(curr_in, [])
+                if c.output == curr_out
+            ),
+            None,
+        )
         assert conv is not None
 
         img = conv.convert(img)

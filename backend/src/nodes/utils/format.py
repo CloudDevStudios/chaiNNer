@@ -26,16 +26,14 @@ def format_image_with_channels(
     conj: Conj = "and",
     plural: bool = False,
 ) -> str:
-    assert len(channels) > 0
+    assert channels
 
     named = {1: "grayscale", 3: "RGB", 4: "RGBA"}
-    if all([x in named for x in channels]):
+    if all(x in named for x in channels):
         if plural:
-            return join_english(channels, lambda c: named[c], conj=conj) + " images"
+            return f"{join_english(channels, lambda c: named[c], conj=conj)} images"
         else:
-            return (
-                "a " + join_english(channels, lambda c: named[c], conj=conj) + " image"
-            )
+            return f"a {join_english(channels, lambda c: named[c], conj=conj)} image"
 
     if plural:
         return f"images with {join_english(channels, conj=conj)} channel(s)"
@@ -48,16 +46,14 @@ def format_color_with_channels(
     conj: Conj = "and",
     plural: bool = False,
 ) -> str:
-    assert len(channels) > 0
+    assert channels
 
     named = {1: "grayscale", 3: "RGB", 4: "RGBA"}
-    if all([x in named for x in channels]):
+    if all(x in named for x in channels):
         if plural:
-            return join_english(channels, lambda c: named[c], conj=conj) + " colors"
+            return f"{join_english(channels, lambda c: named[c], conj=conj)} colors"
         else:
-            return (
-                "a " + join_english(channels, lambda c: named[c], conj=conj) + " color"
-            )
+            return f"a {join_english(channels, lambda c: named[c], conj=conj)} color"
 
     if plural:
         return f"color with {join_english(channels, conj=conj)} channel(s)"

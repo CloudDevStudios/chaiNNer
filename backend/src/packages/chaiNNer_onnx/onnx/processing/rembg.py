@@ -63,5 +63,5 @@ def rembg_node(
         foreground_threshold,
         background_threshold,
         alpha_matting_erode_size=kernel_size,
-        post_process_mask=bool(post_process_mask),
+        post_process_mask=post_process_mask,
     )

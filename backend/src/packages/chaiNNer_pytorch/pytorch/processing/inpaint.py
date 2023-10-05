@@ -25,9 +25,7 @@ from .. import processing_group
 
 
 def ceil_modulo(x: int, mod: int) -> int:
-    if x % mod == 0:
-        return x
-    return (x // mod + 1) * mod
+    return x if x % mod == 0 else (x // mod + 1) * mod
 
 
 def pad_img_to_modulo(

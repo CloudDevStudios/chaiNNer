@@ -45,9 +45,7 @@ class MedianCutBucket:
         if mask.sum() == 0:
             mean = np.mean(self.data[:, widest_channel])
             mask = self.data[:, widest_channel] > mean
-        return MedianCutBucket(self.data[mask == True]), MedianCutBucket(
-            self.data[mask == False]
-        )
+        return MedianCutBucket(self.data[mask]), MedianCutBucket(self.data[not mask])
 
     def average(self):
         return np.mean(self.data, axis=0)

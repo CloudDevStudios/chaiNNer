@@ -56,6 +56,4 @@ def image_convolve_node(
         value=0,
     )
 
-    output = cv2.filter2D(img, -1, kernel)
-
-    return output
+    return cv2.filter2D(img, -1, kernel)

@@ -127,9 +127,7 @@ def VideoFrameIteratorFrameWriterNode(
 
     if writer.out is None:
         try:
-            extension = video_type
-            if video_type == "mkv-ffv1":
-                extension = "mkv"
+            extension = "mkv" if video_type == "mkv-ffv1" else video_type
             video_save_path = os.path.join(save_dir, f"{video_name}.{extension}")
             writer.out = (
                 ffmpeg.input(
@@ -283,5 +281,5 @@ async def SimpleVideoFrameIteratorNode(path: str, context: IteratorContext) -> N
                     os.rename(full_out_path, out_path)
             except:
                 logger.warning(
-                    f"Failed to copy audio to video, input file probably contains no audio. Ignoring audio copy."
+                    "Failed to copy audio to video, input file probably contains no audio. Ignoring audio copy."
                 )

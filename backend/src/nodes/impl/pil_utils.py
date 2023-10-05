@@ -74,7 +74,7 @@ def rotate(
     c = get_h_w_c(img)[2]
     if fill == FillColor.TRANSPARENT:
         img = convert_to_BGRA(img, c)
-    fill_color = tuple([x * 255 for x in fill.get_color(c)])
+    fill_color = tuple(x * 255 for x in fill.get_color(c))
 
     resample = INTERPOLATION_METHODS_MAP[interpolation.interpolation_method]
 

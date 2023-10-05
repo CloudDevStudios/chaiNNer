@@ -11,7 +11,17 @@ from .model import OnnxModel
 def create_inference_session(
     model: OnnxModel, exec_options: ExecutionOptions
 ) -> ort.InferenceSession:
-    if exec_options.onnx_execution_provider == "TensorrtExecutionProvider":
+    if exec_options.onnx_execution_provider == "CUDAExecutionProvider":
+        providers = [
+            (
+                "CUDAExecutionProvider",
+                {
+                    "device_id": exec_options.onnx_gpu_index,
+                },
+            ),
+            "CPUExecutionProvider",
+        ]
+    elif exec_options.onnx_execution_provider == "TensorrtExecutionProvider":
         providers = [
             (
                 "TensorrtExecutionProvider",
@@ -30,21 +40,10 @@ def create_inference_session(
             ),
             "CPUExecutionProvider",
         ]
-    elif exec_options.onnx_execution_provider == "CUDAExecutionProvider":
-        providers = [
-            (
-                "CUDAExecutionProvider",
-                {
-                    "device_id": exec_options.onnx_gpu_index,
-                },
-            ),
-            "CPUExecutionProvider",
-        ]
     else:
         providers = [exec_options.onnx_execution_provider, "CPUExecutionProvider"]
 
-    session = ort.InferenceSession(model.bytes, providers=providers)
-    return session
+    return ort.InferenceSession(model.bytes, providers=providers)
 
 
 __session_cache: WeakKeyDictionary[

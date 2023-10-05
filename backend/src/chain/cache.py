@@ -80,9 +80,7 @@ class OutputCache(Generic[T]):
     def has(self, node_id: NodeId) -> bool:
         if node_id in self.__static or node_id in self.__counted:
             return True
-        if self.parent:
-            return self.parent.has(node_id)
-        return False
+        return self.parent.has(node_id) if self.parent else False
 
     def get(self, node_id: NodeId) -> Optional[T]:
         staticValue = self.__static.get(node_id, None)
@@ -99,10 +97,7 @@ class OutputCache(Generic[T]):
                 gc.collect()
             return value
 
-        if self.parent is not None:
-            return self.parent.get(node_id)
-
-        return None
+        return self.parent.get(node_id) if self.parent is not None else None
 
     def set(self, node_id: NodeId, value: T, strategy: CacheStrategy):
         if strategy.no_caching:

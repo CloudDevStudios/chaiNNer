@@ -55,13 +55,11 @@ def crop_content_node(img: np.ndarray, thresh_val: float) -> np.ndarray:
     # Valid alpha is greater than threshold, else impossible to crop 0 alpha only
     alpha = img[:, :, 3]
     r = np.any(alpha > thresh_val, 1)
-    if r.any():
-        h, w, _ = get_h_w_c(img)
-        c = np.any(alpha > thresh_val, 0)
-        imgout = np.copy(img)[
-            r.argmax() : h - r[::-1].argmax(), c.argmax() : w - c[::-1].argmax()
-        ]
-    else:
+    if not r.any():
         raise RuntimeError("Crop results in empty image.")
 
-    return imgout
+    h, w, _ = get_h_w_c(img)
+    c = np.any(alpha > thresh_val, 0)
+    return np.copy(img)[
+        r.argmax() : h - r[::-1].argmax(), c.argmax() : w - c[::-1].argmax()
+    ]

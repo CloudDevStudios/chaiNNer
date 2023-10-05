@@ -72,6 +72,4 @@ def estimate_alpha_cf(  # pylint: disable=dangerous-default-value
 
     x[is_unknown] = cg(L_U, -R.dot(m), M=preconditioner(L_U), **cg_kwargs)
 
-    alpha = np.clip(x, 0, 1).reshape(trimap.shape)
-
-    return alpha
+    return np.clip(x, 0, 1).reshape(trimap.shape)

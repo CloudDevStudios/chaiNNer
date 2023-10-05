@@ -36,13 +36,11 @@ class FillColor(Enum):
         """Select how to fill negative space that results from rotation"""
 
         if self == FillColor.AUTO:
-            fill_color = (0,) * channels
+            return (0,) * channels
         elif self == FillColor.BLACK:
-            fill_color = (0,) * channels if channels < 4 else (0, 0, 0, 1)
+            return (0,) * channels if channels < 4 else (0, 0, 0, 1)
         else:
-            fill_color = (0, 0, 0, 0)
-
-        return fill_color
+            return 0, 0, 0, 0
 
 
 class FlipAxis(Enum):
@@ -52,9 +50,7 @@ class FlipAxis(Enum):
     NONE = 2
 
     def flip(self, img: np.ndarray) -> np.ndarray:
-        if self == FlipAxis.NONE:
-            return img
-        return cv2.flip(img, self.value)
+        return img if self == FlipAxis.NONE else cv2.flip(img, self.value)
 
 
 class BorderType(Enum):
@@ -74,7 +70,7 @@ class NormalMapType(Enum):
 
 
 def convert_to_BGRA(img: np.ndarray, in_c: int) -> np.ndarray:
-    assert in_c in (1, 3, 4), f"Number of channels ({in_c}) unexpected"
+    assert in_c in {1, 3, 4}, f"Number of channels ({in_c}) unexpected"
     if in_c == 1:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGRA)
     elif in_c == 3:
@@ -169,9 +165,7 @@ def as_2d_grayscale(img: np.ndarray) -> np.ndarray:
 
 def as_3d(img: np.ndarray) -> np.ndarray:
     """Given a grayscale image, this returns an image with 3 dimensions (image.ndim == 3)."""
-    if img.ndim == 2:
-        return np.expand_dims(img.copy(), axis=2)
-    return img
+    return np.expand_dims(img.copy(), axis=2) if img.ndim == 2 else img
 
 
 def as_target_channels(
@@ -231,11 +225,7 @@ def create_border(
         return img
 
     _, _, c = get_h_w_c(img)
-    if c == 4 and border_type == BorderType.BLACK:
-        value = (0, 0, 0, 1)
-    else:
-        value = 0
-
+    value = (0, 0, 0, 1) if c == 4 and border_type == BorderType.BLACK else 0
     cv_border_type: int = border_type.value
     if border_type == BorderType.TRANSPARENT:
         cv_border_type = cv2.BORDER_CONSTANT

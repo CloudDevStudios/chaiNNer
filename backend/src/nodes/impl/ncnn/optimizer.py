@@ -17,7 +17,7 @@ class NcnnOptimizer:
                 batchnorm_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "Scale":
                         continue
                     if len(self.model.layers[j].inputs) != 1:
@@ -215,10 +215,8 @@ class NcnnOptimizer:
                 "Deconvolution",
                 "InnerProduct",
             ):
-                # Convolution - Add
-                output = layer.outputs[0]
-
                 j = i
+                output = layer.outputs[0]
                 for j in range(i + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "BinaryOp":
                         continue
@@ -255,14 +253,15 @@ class NcnnOptimizer:
 
                 channels = checked_cast(int, layer.params[0].value)
 
-                if not (
-                    memorydata.params[0].value == channels
-                    and memorydata.params[1].value == 0
-                    and memorydata.params[2].value == 0
-                ) or (
-                    memorydata.params[0].value == 1
-                    and memorydata.params[1].value == 1
-                    and memorydata.params[2].value == channels
+                if (
+                    memorydata.params[0].value != channels
+                    or memorydata.params[1].value != 0
+                    or memorydata.params[2].value != 0
+                    or (
+                        memorydata.params[0].value == 1
+                        and memorydata.params[1].value == 1
+                        and memorydata.params[2].value == channels
+                    )
                 ):
                     # not bias-like broadcasting type
                     continue
@@ -624,7 +623,7 @@ class NcnnOptimizer:
                     self.model.blob_count -= 2
                     binaryop0.op_type = "ncnnfused"
                     binaryop1.op_type = "ncnnfused"
-                elif j0 != i and j1 == i:
+                elif j0 != i:
                     # fuse BinaryOp - X - BinaryOp to Eltwise
                     eltwise.add_param(
                         1, [2, checked_cast(float, binaryop0.params[2].value), 1.0]
@@ -759,10 +758,8 @@ class NcnnOptimizer:
 
     def __eliminate_split(self):
         blob_input_references = []
-        for i, layer in enumerate(self.model.layers):
-            for input_name in layer.inputs:
-                blob_input_references.append(input_name)
-
+        for layer in self.model.layers:
+            blob_input_references.extend(iter(layer.inputs))
         for i, layer in enumerate(self.model.layers):
             if layer.op_type == "Split":
                 real_split_output_count = 0
@@ -811,16 +808,14 @@ class NcnnOptimizer:
                 memdata_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type == "ncnnfused":
                         continue
 
-                    orphaned = True
-                    for k in range(self.model.layers[j].num_inputs):
-                        if self.model.layers[j].inputs[k] == memdata_output:
-                            orphaned = False
-                            break
-
+                    orphaned = all(
+                        self.model.layers[j].inputs[k] != memdata_output
+                        for k in range(self.model.layers[j].num_inputs)
+                    )
                     if not orphaned:
                         break
 
@@ -841,7 +836,7 @@ class NcnnOptimizer:
                 pooling_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "Reshape":
                         continue
                     if self.model.layers[j].num_inputs != 1:
@@ -878,7 +873,7 @@ class NcnnOptimizer:
                 pooling_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "Flatten":
                         continue
                     if self.model.layers[j].num_inputs != 1:
@@ -905,7 +900,7 @@ class NcnnOptimizer:
                 inprod_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "Flatten":
                         continue
                     if self.model.layers[j].num_inputs != 1:
@@ -939,7 +934,7 @@ class NcnnOptimizer:
                 reshape_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "BinaryOp":
                         continue
                     if self.model.layers[j].num_inputs != 2:
@@ -979,14 +974,14 @@ class NcnnOptimizer:
                 axes = checked_cast(list, layer.params[3].value)
                 if len(axes) != 1:
                     continue
-                if axes[0] != 2 and axes[0] != 3:
+                if axes[0] not in [2, 3]:
                     continue
 
                 # Reduction(2/3) - Reduction(2)
                 reduction1_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "Reduction":
                         continue
                     if self.model.layers[j].num_inputs != 1:
@@ -1062,7 +1057,7 @@ class NcnnOptimizer:
                 pooling_output = layer.outputs[0]
 
                 j = i
-                for j in range(i + 1, len(self.model.layers)):
+                for j in range(j + 1, len(self.model.layers)):
                     if self.model.layers[j].op_type != "Convolution":
                         continue
                     if self.model.layers[j].num_inputs != 1:
@@ -1122,7 +1117,7 @@ class NcnnOptimizer:
                     inprod_output = layer.outputs[0]
 
                     j = i
-                    for j in range(i + 1, len(self.model.layers)):
+                    for j in range(j + 1, len(self.model.layers)):
                         if self.model.layers[j].op_type != "Convolution":
                             continue
                         if self.model.layers[j].num_inputs != 1:

@@ -50,7 +50,7 @@ class SplitMode(Enum):
         elif self == SplitMode.LAB:
             if l < 3:
                 return np.dstack(channels)
-            rgb = convert(np.dstack(channels[0:3]), LAB, RGB)
+            rgb = convert(np.dstack(channels[:3]), LAB, RGB)
             if l == 3:
                 return rgb
             return np.dstack([rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2], *channels[3:]])
@@ -67,8 +67,7 @@ def grayscale_split(
     """
 
     input_channels = mode.split(img)
-    output_channels: List[np.ndarray] = []
-    for channel in input_channels:
-        output_channels.append(process(channel))
-
+    output_channels: List[np.ndarray] = [
+        process(channel) for channel in input_channels
+    ]
     return mode.combine(output_channels)
