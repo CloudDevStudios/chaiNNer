@@ -28,9 +28,10 @@ def enforce_inputs(inputs: Iterable[object], node: NodeData) -> List[object]:
     if node.type == "iteratorHelper":
         return list(inputs)
 
-    enforced_inputs: List[object] = []
-    for index, value in enumerate(inputs):
-        enforced_inputs.append(node.inputs[index].enforce_(value))
+    enforced_inputs: List[object] = [
+        node.inputs[index].enforce_(value)
+        for index, value in enumerate(inputs)
+    ]
     return enforced_inputs
 
 
@@ -63,7 +64,7 @@ def enforce_output(raw_output: object, node: NodeData) -> Output:
 
 
 def run_node(node: NodeData, inputs: Iterable[object], node_id: NodeId) -> Output:
-    assert node.type == "regularNode" or node.type == "iteratorHelper"
+    assert node.type in ["regularNode", "iteratorHelper"]
 
     enforced_inputs = enforce_inputs(inputs, node)
     try:
@@ -238,7 +239,7 @@ class IteratorContext:
 
         await self.__finish_progress(length)
 
-        if len(errors) > 0:
+        if errors:
             raise RuntimeError(
                 # pylint: disable=consider-using-f-string
                 "Errors occurred during iteration: \n• {}".format("\n• ".join(errors))
@@ -276,7 +277,7 @@ class IteratorContext:
 
         await self.__finish_progress(index)
 
-        if len(errors) > 0:
+        if errors:
             raise RuntimeError(
                 # pylint: disable=consider-using-f-string
                 "Errors occurred during iteration: \n• {}".format("\n• ".join(errors))
@@ -364,7 +365,7 @@ class Executor:
         # Return cached output value from an already-run node if that cached output exists
         cached = self.cache.get(node.id)
         if cached is not None:
-            if not node.id in self.completed_node_ids:
+            if node.id not in self.completed_node_ids:
                 self.completed_node_ids.add(node.id)
                 await self.queue.put(self.__create_node_finish(node.id))
             return cached
@@ -401,8 +402,6 @@ class Executor:
                 )
             )
 
-            await self.progress.suspend()
-            await self.__broadcast_data(node_instance, node.id, execution_time, output)
         else:
             output, execution_time = await self.loop.run_in_executor(
                 self.pool,
@@ -411,9 +410,8 @@ class Executor:
                 ),
             )
 
-            await self.progress.suspend()
-            await self.__broadcast_data(node_instance, node.id, execution_time, output)
-
+        await self.progress.suspend()
+        await self.__broadcast_data(node_instance, node.id, execution_time, output)
         # Cache the output of the node
         # If we are executing a free node from within an iterator,
         # we want to store the result in the cache of the parent executor
@@ -511,10 +509,9 @@ class Executor:
         return output_nodes
 
     def __get_iterator_output_nodes(self, sub: SubChain) -> List[NodeId]:
-        output_nodes: List[NodeId] = []
-        for node in sub.nodes.values():
-            if node.has_side_effects():
-                output_nodes.append(node.id)
+        output_nodes: List[NodeId] = [
+            node.id for node in sub.nodes.values() if node.has_side_effects()
+        ]
         return output_nodes
 
     async def __process_nodes(self, nodes: List[NodeId]):

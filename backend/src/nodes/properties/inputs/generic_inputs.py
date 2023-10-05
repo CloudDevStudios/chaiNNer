@@ -69,7 +69,7 @@ class DropDownInput(BaseInput):
         )
         self.preferred_style: DropDownStyle = preferred_style
 
-        if not self.default in self.accepted_values:
+        if self.default not in self.accepted_values:
             logger.error(
                 f"Invalid default value {self.default} in {label} dropdown. Using first value instead."
             )
@@ -322,9 +322,7 @@ class SeedInput(NumberInput):
         self.associated_type = Seed
 
     def enforce(self, value) -> Seed:
-        if isinstance(value, Seed):
-            return value
-        return Seed(int(value))
+        return value if isinstance(value, Seed) else Seed(int(value))
 
     def make_optional(self):
         raise ValueError("SeedInput cannot be made optional")
@@ -476,12 +474,16 @@ def TileSizeDropdown(label="Tile Size", estimate=True) -> DropDownInput:
     if estimate:
         options.append({"option": "Auto (estimate)", "value": 0})
 
-    options.append({"option": "Maximum", "value": -2})
-    options.append({"option": "No Tiling", "value": -1})
-
-    for size in [128, 192, 256, 384, 512, 768, 1024, 2048, 4096]:
-        options.append({"option": str(size), "value": size})
-
+    options.extend(
+        (
+            {"option": "Maximum", "value": -2},
+            {"option": "No Tiling", "value": -1},
+        )
+    )
+    options.extend(
+        {"option": str(size), "value": size}
+        for size in [128, 192, 256, 384, 512, 768, 1024, 2048, 4096]
+    )
     return DropDownInput(
         input_type="TileSize",
         label=label,

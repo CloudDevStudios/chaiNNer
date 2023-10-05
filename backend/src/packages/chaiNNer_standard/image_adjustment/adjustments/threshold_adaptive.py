@@ -52,7 +52,7 @@ def adaptive_threshold_node(
 
     real_maxval = maxval / 100 * 255
 
-    result = cv2.adaptiveThreshold(
+    return cv2.adaptiveThreshold(
         img,
         real_maxval,
         adaptive_method,
@@ -60,5 +60,3 @@ def adaptive_threshold_node(
         block_radius * 2 + 1,
         c,
     )
-
-    return result

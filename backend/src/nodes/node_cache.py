@@ -45,27 +45,24 @@ class NodeOutputCache:
             elif isinstance(arg, Enum):
                 key.append(arg.value)
             elif isinstance(arg, np.ndarray):
-                key.append(tuple(arg.shape))
-                key.append(arg.dtype.str)
-                key.append(hashlib.sha256(arg.tobytes()).digest())
+                key.extend(
+                    (
+                        tuple(arg.shape),
+                        arg.dtype.str,
+                        hashlib.sha256(arg.tobytes()).digest(),
+                    )
+                )
             elif hasattr(arg, "cache_key_func"):
-                key.append(arg.__class__.__name__)
-                key.append(arg.cache_key_func())
+                key.extend((arg.__class__.__name__, arg.cache_key_func()))
             else:
                 raise RuntimeError(f"Unexpected argument type {arg.__class__.__name__}")
         return tuple(key)
 
     @staticmethod
     def _estimate_bytes(output) -> int:
-        size = 0
-        for out in output:
-            if isinstance(out, np.ndarray):
-                size += out.nbytes
-            else:
-                # any other type but numpy arrays is probably negligible, but here's an overestimate to handle
-                # pathological cases where someone has a pipeline with a million math nodes
-                size += 1024  # 1 KiB
-        return size
+        return sum(
+            out.nbytes if isinstance(out, np.ndarray) else 1024 for out in output
+        )
 
     def empty(self):
         return len(self._data) == 0
@@ -79,7 +76,7 @@ class NodeOutputCache:
     @staticmethod
     def _enforce_limits():
         while True:
-            total_bytes = sum([cache.size() for cache in CACHE_REGISTRY])
+            total_bytes = sum(cache.size() for cache in CACHE_REGISTRY)
             logger.debug(
                 f"Cache size: {total_bytes} ({100*total_bytes/CACHE_MAX_BYTES:0.1f}% of limit)"
             )
@@ -119,9 +116,7 @@ class NodeOutputCache:
 
     @staticmethod
     def _list_to_output(output: List):
-        if len(output) == 1:
-            return output[0]
-        return output
+        return output[0] if len(output) == 1 else output
 
     def get(self, args) -> Optional[List]:
         key = self._args_to_key(args)

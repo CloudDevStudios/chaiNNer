@@ -66,13 +66,10 @@ class ClothSession(BaseSession):
         mask = Image.fromarray(pred.astype("uint8"), mode="L")
         mask = mask.resize(img.size, Image.LANCZOS)
 
-        masks = []
-
         mask1 = mask.copy()
         mask1.putpalette(pallete1)
         mask1 = mask1.convert("RGB").convert("L")
-        masks.append(mask1)
-
+        masks = [mask1]
         mask2 = mask.copy()
         mask2.putpalette(pallete2)
         mask2 = mask2.convert("RGB").convert("L")

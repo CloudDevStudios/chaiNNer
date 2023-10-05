@@ -43,6 +43,4 @@ def edge_crop_node(
     assert top + bottom < h, "Cropped area would result in an image with no height"
     assert left + right < w, "Cropped area would result in an image with no width"
 
-    result = img[top : h - bottom, left : w - right]
-
-    return result
+    return img[top : h - bottom, left : w - right]

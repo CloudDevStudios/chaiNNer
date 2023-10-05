@@ -49,7 +49,7 @@ def __run_texconv(args: List[str], error_message: str):
         logger.error(
             "\n".join(
                 [
-                    f"Failed to run texconv.",
+                    "Failed to run texconv.",
                     f"texconv: {__TEXCONV_EXE}",
                     f"args: {args}",
                     f"exit code: {result.returncode}",
@@ -127,8 +127,7 @@ def save_as_dds(
             target_dir,
         ]
 
-        bc = ""
-        bc += "u" if uniform_weighting else ""
+        bc = "" + ("u" if uniform_weighting else "")
         bc += "d" if dithering else ""
         bc += "q" if minimal_compression else ""
         bc += "x" if maximum_compression else ""

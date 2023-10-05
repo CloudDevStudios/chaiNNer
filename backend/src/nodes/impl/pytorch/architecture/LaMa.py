@@ -40,11 +40,9 @@ class LearnableSpatialTransformWrapper(nn.Module):
         height, width = x.shape[2:]
         pad_h, pad_w = int(height * self.pad_coef), int(width * self.pad_coef)
         x_padded = F.pad(x, [pad_w, pad_w, pad_h, pad_h], mode="reflect")
-        x_padded_rotated = rotate(
+        return rotate(
             x_padded, self.angle.to(x_padded), InterpolationMode.BILINEAR, fill=0
         )
-
-        return x_padded_rotated
 
     def inverse_transform(self, y_padded_rotated, orig_x):
         height, width = orig_x.shape[2:]
@@ -57,8 +55,7 @@ class LearnableSpatialTransformWrapper(nn.Module):
             fill=0,
         )
         y_height, y_width = y_padded.shape[2:]
-        y = y_padded[:, :, pad_h : y_height - pad_h, pad_w : y_width - pad_w]
-        return y
+        return y_padded[:, :, pad_h : y_height - pad_h, pad_w : y_width - pad_w]
 
 
 class SELayer(nn.Module):
@@ -76,8 +73,7 @@ class SELayer(nn.Module):
         b, c, _, _ = x.size()
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
-        res = x * y.expand_as(x)
-        return res
+        return x * y.expand_as(x)
 
 
 class FourierUnit(nn.Module):
@@ -124,11 +120,7 @@ class FourierUnit(nn.Module):
         self.fft_norm = fft_norm
 
     def forward(self, x):
-        half_check = False
-        if x.type() == "torch.cuda.HalfTensor":
-            # half only works on gpu anyway
-            half_check = True
-
+        half_check = x.type() == "torch.cuda.HalfTensor"
         batch = x.shape[0]
 
         if self.spatial_scale_factor is not None:
@@ -142,7 +134,7 @@ class FourierUnit(nn.Module):
 
         # (batch, c, h, w/2+1, 2)
         fft_dim = (-3, -2, -1) if self.ffc3d else (-2, -1)
-        if half_check == True:
+        if half_check:
             ffted = torch.fft.rfftn(
                 x.float(), dim=fft_dim, norm=self.fft_norm
             )  # .type(torch.cuda.HalfTensor)
@@ -176,13 +168,9 @@ class FourierUnit(nn.Module):
         if self.use_se:
             ffted = self.se(ffted)
 
-        if half_check == True:
-            ffted = self.conv_layer(ffted.half())  # (batch, c*2, h, w/2+1)
-        else:
-            ffted = self.conv_layer(
-                ffted
-            )  # .type(torch.cuda.FloatTensor)  # (batch, c*2, h, w/2+1)
-
+        ffted = (
+            self.conv_layer(ffted.half()) if half_check else self.conv_layer(ffted)
+        )
         ffted = self.relu(self.bn(ffted))
         # forcing to be always float
         ffted = ffted.float()
@@ -207,7 +195,7 @@ class FourierUnit(nn.Module):
             ffted, s=ifft_shape_slice, dim=fft_dim, norm=self.fft_norm
         )
 
-        if half_check == True:
+        if half_check:
             output = output.half()
 
         if self.spatial_scale_factor is not None:
@@ -299,7 +287,7 @@ class FFC(nn.Module):
     ):
         super(FFC, self).__init__()
 
-        assert stride == 1 or stride == 2, "Stride should be 1 or 2."
+        assert stride in [1, 2], "Stride should be 1 or 2."
         self.stride = stride
 
         in_cg = int(in_channels * ratio_gin)
@@ -511,9 +499,7 @@ class ConcatTupleLayer(nn.Module):
         assert isinstance(x, tuple)
         x_l, x_g = x
         assert torch.is_tensor(x_l) or torch.is_tensor(x_g)
-        if not torch.is_tensor(x_g):
-            return x_l
-        return torch.cat(x, dim=1)
+        return x_l if not torch.is_tensor(x_g) else torch.cat(x, dim=1)
 
 
 class FFCResNetGenerator(nn.Module):
@@ -690,5 +676,4 @@ class LaMa(nn.Module):
     def forward(self, img, mask):
         masked_img = img * (1 - mask)
         inpainted_mask = mask * self.model.forward(masked_img, mask)
-        result = inpainted_mask + (1 - mask) * img
-        return result
+        return inpainted_mask + (1 - mask) * img

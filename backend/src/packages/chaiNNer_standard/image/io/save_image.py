@@ -174,23 +174,7 @@ def save_image_node(
         return
 
     # Any image not supported by cv2, will be handled by pillow.
-    if extension not in ["png", "jpg", "tiff", "webp"]:
-        channels = get_h_w_c(img)[2]
-        if channels == 1:
-            # PIL supports grayscale images just fine, so we don't need to do any conversion
-            pass
-        elif channels == 3:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        elif channels == 4:
-            img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
-        else:
-            raise RuntimeError(
-                f"Unsupported number of channels. Saving .{extension} images is only supported for "
-                f"grayscale, RGB, and RGBA images."
-            )
-        with Image.fromarray(img) as image:
-            image.save(full_path)
-    else:
+    if extension in {"png", "jpg", "tiff", "webp"}:
         if extension == "jpg":
             params = [
                 cv2.IMWRITE_JPEG_QUALITY,
@@ -206,3 +190,20 @@ def save_image_node(
             params = []
 
         cv_save_image(full_path, img, params)
+
+    else:
+        channels = get_h_w_c(img)[2]
+        if channels == 1:
+            # PIL supports grayscale images just fine, so we don't need to do any conversion
+            pass
+        elif channels == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        elif channels == 4:
+            img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
+        else:
+            raise RuntimeError(
+                f"Unsupported number of channels. Saving .{extension} images is only supported for "
+                f"grayscale, RGB, and RGBA images."
+            )
+        with Image.fromarray(img) as image:
+            image.save(full_path)

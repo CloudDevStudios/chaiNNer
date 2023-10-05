@@ -21,10 +21,7 @@ def clampNumber(
         value = max(value, min_value)
 
     # guarantee integers
-    if precision <= 0:
-        return int(value)
-    else:
-        return float(value)
+    return int(value) if precision <= 0 else float(value)
 
 
 def get_number_type(

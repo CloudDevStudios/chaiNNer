@@ -87,7 +87,7 @@ def stack_node(
     img = im1
     imgs = []
     max_h, max_w, max_c = 0, 0, 1
-    for img in im1, im2, im3, im4:
+    for img in (img, im2, im3, im4):
         if img is not None:
             h, w, c = get_h_w_c(img)
             if c == 1:
@@ -130,21 +130,21 @@ def stack_node(
         fixed_imgs.append(fixed_img.astype("float32"))
 
     if orientation == Orientation.HORIZONTAL:
-        for i in range(len(fixed_imgs)):
+        for fixed_img_ in fixed_imgs:
             assert (
-                fixed_imgs[i].shape[0] == fixed_imgs[0].shape[0]
+                fixed_img_.shape[0] == fixed_imgs[0].shape[0]
             ), "Inputted heights are not the same and could not be auto-fixed"
             assert (
-                fixed_imgs[i].dtype == fixed_imgs[0].dtype
+                fixed_img_.dtype == fixed_imgs[0].dtype
             ), "The image types are not the same and could not be auto-fixed"
         img = cv2.hconcat(fixed_imgs)  # type: ignore
     elif orientation == Orientation.VERTICAL:
-        for i in range(len(fixed_imgs)):
+        for fixed_img__ in fixed_imgs:
             assert (
-                fixed_imgs[i].shape[1] == fixed_imgs[0].shape[1]
+                fixed_img__.shape[1] == fixed_imgs[0].shape[1]
             ), "Inputted widths are not the same and could not be auto-fixed"
             assert (
-                fixed_imgs[i].dtype == fixed_imgs[0].dtype
+                fixed_img__.dtype == fixed_imgs[0].dtype
             ), "The image types are not the same and could not be auto-fixed"
         img = cv2.vconcat(fixed_imgs)  # type: ignore
     else:

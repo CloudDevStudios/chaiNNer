@@ -229,10 +229,7 @@ class Encoder(nn.Module):
         curr_res = self.resolution
         in_ch_mult = (1,) + tuple(ch_mult)
 
-        blocks = []
-        # initial convultion
-        blocks.append(nn.Conv2d(in_channels, nf, kernel_size=3, stride=1, padding=1))
-
+        blocks = [nn.Conv2d(in_channels, nf, kernel_size=3, stride=1, padding=1)]
         # residual and downsampling blocks, with attention on smaller res (16x16)
         for i in range(self.num_resolutions):
             block_in_ch = nf * in_ch_mult[i]
@@ -280,12 +277,11 @@ class Generator(nn.Module):
         block_in_ch = self.nf * self.ch_mult[-1]
         curr_res = self.resolution // 2 ** (self.num_resolutions - 1)
 
-        blocks = []
-        # initial conv
-        blocks.append(
-            nn.Conv2d(self.in_channels, block_in_ch, kernel_size=3, stride=1, padding=1)
-        )
-
+        blocks = [
+            nn.Conv2d(
+                self.in_channels, block_in_ch, kernel_size=3, stride=1, padding=1
+            )
+        ]
         # non-local attention block
         blocks.append(ResBlock(block_in_ch, block_in_ch))
         blocks.append(AttnBlock(block_in_ch))
@@ -474,8 +470,7 @@ class PositionEmbeddingSine(nn.Module):
         pos_y = torch.stack(
             (pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4
         ).flatten(3)
-        pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
-        return pos
+        return torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
 
 
 def _get_activation_fn(activation):
@@ -597,8 +592,7 @@ class Fuse_sft_block(nn.Module):
         scale = self.scale(enc_feat)
         shift = self.shift(enc_feat)
         residual = w * (dec_feat * scale + shift)
-        out = dec_feat + residual
-        return out
+        return dec_feat + residual
 
 
 class CodeFormer(VQAutoEncoder):
@@ -618,7 +612,7 @@ class CodeFormer(VQAutoEncoder):
 
         try:
             n_layers = len(
-                set([x.split(".")[1] for x in state_dict.keys() if "ft_layers" in x])
+                {x.split(".")[1] for x in state_dict.keys() if "ft_layers" in x}
             )
         except:
             pass

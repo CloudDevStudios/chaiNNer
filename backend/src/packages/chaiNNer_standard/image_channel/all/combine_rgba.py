@@ -54,15 +54,16 @@ def combine_rgba_node(
     if img_a is None:
         img_a = Color.gray(1)
 
-    start_shape = None
-
     # determine shape
     inputs = (img_b, img_g, img_r, img_a)
-    for i in inputs:
-        if isinstance(i, np.ndarray):
-            start_shape = (i.shape[0], i.shape[1])
-            break
-
+    start_shape = next(
+        (
+            (i.shape[0], i.shape[1])
+            for i in inputs
+            if isinstance(i, np.ndarray)
+        ),
+        None,
+    )
     if start_shape is None:
         raise ValueError(
             "At least one channels must be an image, but all given channels are colors."

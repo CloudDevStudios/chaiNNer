@@ -43,9 +43,7 @@ ROT = ReductionOpTypes
 class Onnx2NcnnConverter:
     def __init__(self, onnx_model: onnx.ModelProto):
         self.onnx_graph: onnx.GraphProto = onnx_model.graph
-        self.mutable_graph_nodes: List[onnx.NodeProto] = [
-            n for n in self.onnx_graph.node
-        ]
+        self.mutable_graph_nodes: List[onnx.NodeProto] = list(self.onnx_graph.node)
         self.node_count: int = len(self.onnx_graph.node)
         self.weights: Dict[str, onnx.TensorProto] = {
             initializer.name: initializer for initializer in self.onnx_graph.initializer
@@ -104,8 +102,8 @@ class Onnx2NcnnConverter:
     def fuse_weight_reshape(self, reduced_node_count: List[int]) -> None:
         for i in range(self.node_count):
             node = self.mutable_graph_nodes[i]
-            if node.op_type == "Reshape":
-                if node.input[0] in self.weights:
+            if node.input[0] in self.weights:
+                if node.op_type == "Reshape":
                     self.weights[node.output[0]] = self.weights[node.input[0]]
                     if len(node.input) == 1:
                         shape = get_node_attr_ai(node, "shape")
@@ -118,23 +116,22 @@ class Onnx2NcnnConverter:
                     for dim in shape:
                         self.weights[node.output[0]].dims.append(dim)
 
-                    node.op_type = "noop_reducedncnn"
-
                     self.node_reference[node.input[0]] -= 1
                     if len(node.input) == 2:
                         self.node_reference[node.input[1]] -= 1
 
+                    node.op_type = "noop_reducedncnn"
                     reduced_node_count[0] += 1
                     i += 1
 
     def fuse_weight_transpose(self, reduced_node_count: List[int]) -> None:
         for i in range(self.node_count):
             node = self.mutable_graph_nodes[i]
-            if node.op_type == "Transpose":
-                if (
+            if (
                     node.input[0] in self.weights
                     and len(self.weights[node.input[0]].dims) == 2
                 ):
+                if node.op_type == "Transpose":
                     perm = get_node_attr_ai(node, "perm")
                     if perm.size != 2 or perm[0] != 1 or perm[1] != 0:
                         continue
@@ -156,10 +153,9 @@ class Onnx2NcnnConverter:
                         self.clear_container(B.float_data)
                         B.float_data.extend(permuted_data)
 
-                    # Reduce
-                    node.op_type = "noop_reducednccn"
                     self.node_reference[node.input[0]] -= 1
 
+                    node.op_type = "noop_reducednccn"
                     reduced_node_count[0] += 1
                     i += 1
 
@@ -175,17 +171,14 @@ class Onnx2NcnnConverter:
 
                 if len(node.input) == 1:
                     shape = get_node_attr_ai(node, "shape")
-                else:
-                    # Skip weight reshape
-                    if node.input[1] not in self.weights:
-                        continue
+                elif node.input[1] in self.weights:
                     shape = get_node_attr_from_input_ai(self.weights[node.input[1]])
 
+                else:
+                    continue
                 # 1 groups channels_per_group, height, width
                 # reverse style = channels_per_group, groups, height * width
-                if (shape.size != 5 and shape.size != 3) or (
-                    shape.size == 5 and shape[0] != 1
-                ):
+                if shape.size not in [5, 3] or (shape.size == 5 and shape[0] != 1):
                     continue
                 if i + 2 >= self.node_count:
                     continue
@@ -196,7 +189,8 @@ class Onnx2NcnnConverter:
                 if node3.op_type == "Constant":
                     if i + 3 >= self.node_count:
                         continue
-                    node3 = self.mutable_graph_nodes[i + 3]
+                    else:
+                        node3 = self.mutable_graph_nodes[i + 3]
                 if (node2.op_type != "Transpose" or node3.op_type != "Reshape") or (
                     self.node_reference[node2.output[0]] != 1
                 ):
@@ -205,7 +199,7 @@ class Onnx2NcnnConverter:
                 # 0 2 1 3 4
                 # reverse style = 1 0 2
                 perm = get_node_attr_ai(node2, "perm")
-                if perm.size != 5 and perm.size != 3:
+                if perm.size not in [5, 3]:
                     continue
                 if perm.size == 5 and (
                     perm[0] != 0
@@ -220,18 +214,17 @@ class Onnx2NcnnConverter:
 
                 if len(node3.input) == 1:
                     shape3 = get_node_attr_ai(node3, "shape")
-                else:
-                    if node3.input[1] not in self.weights:
-                        continue
+                elif node3.input[1] in self.weights:
                     shape3 = get_node_attr_from_input_ai(self.weights[node3.input[1]])
 
+                else:
+                    continue
                 # 1, -1, height, width
                 # reverse style = group, -1, channels_per_group, height, width
-                if shape3.size != 4 and shape3.size != 5:
+                if shape3.size not in [4, 5]:
                     continue
                 if shape3.size == 4 and (
-                    shape3[0] != 1
-                    or (shape3[1] != -1 and shape3[1] != shape[1] * shape[2])
+                    shape3[0] != 1 or shape3[1] not in [-1, shape[1] * shape[2]]
                 ):
                     continue
                 if shape3.size == 5 and (
@@ -369,7 +362,7 @@ class Onnx2NcnnConverter:
                 if (
                     node2.op_type != "Clip"
                     or node3.op_type != "Mul"
-                    or (node4.op_type != "Div" and node4.op_type != "Mul")
+                    or node4.op_type not in ["Div", "Mul"]
                 ):
                     continue
                 if self.node_reference[node2.output[0]] != 1:
@@ -517,9 +510,7 @@ class Onnx2NcnnConverter:
                         continue
                     node3 = self.mutable_graph_nodes[i + 3]
 
-                if node2.op_type != "Clip" or (
-                    node3.op_type != "Div" and node3.op_type != "Mul"
-                ):
+                if node2.op_type != "Clip" or node3.op_type not in ["Div", "Mul"]:
                     continue
 
                 if self.node_reference[node2.output[0]] != 1:
@@ -794,12 +785,11 @@ class Onnx2NcnnConverter:
 
                 if len(node.input) == 1:
                     shape = get_node_attr_ai(node, "shape")
-                else:
-                    # Skip weight reshape
-                    if node.input[1] not in self.weights:
-                        continue
-
+                elif node.input[1] in self.weights:
                     shape = get_node_attr_from_input_ai(self.weights[node.input[1]])
+
+                else:
+                    continue
 
                 # 0, group, -1
                 if (
@@ -848,12 +838,11 @@ class Onnx2NcnnConverter:
 
                 if len(node3.input) == 1:
                     shape2 = get_node_attr_ai(node3, "shape")
-                else:
-                    # Skip weight reshape
-                    if node3.input[1] not in self.weights:
-                        continue
-
+                elif node3.input[1] in self.weights:
                     shape2 = get_node_attr_from_input_ai(self.weights[node3.input[1]])
+
+                else:
+                    continue
 
                 # 1, channels, w, h
                 if shape2.size != 4 or shape2[0] != 1:

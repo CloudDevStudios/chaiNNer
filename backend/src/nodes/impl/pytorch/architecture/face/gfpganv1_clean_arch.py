@@ -77,11 +77,10 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
                 ]
         # style truncation
         if truncation < 1:
-            style_truncation = []
-            for style in styles:
-                style_truncation.append(
-                    truncation_latent + truncation * (style - truncation_latent)
-                )
+            style_truncation = [
+                truncation_latent + truncation * (style - truncation_latent)
+                for style in styles
+            ]
             styles = style_truncation
         # get style latents with injection
         if len(styles) == 1:
@@ -132,10 +131,7 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
 
         image = skip
 
-        if return_latents:
-            return image, latent
-        else:
-            return image, None
+        return (image, latent) if return_latents else (image, None)
 
 
 class ResBlock(nn.Module):
@@ -199,7 +195,6 @@ class GFPGANv1Clean(nn.Module):
         out_size = 512
         num_style_feat = 512
         channel_multiplier = 2
-        decoder_load_path = None
         fix_decoder = False
         num_mlp = 8
         input_is_latent = True
@@ -280,8 +275,7 @@ class GFPGANv1Clean(nn.Module):
             sft_half=sft_half,
         )
 
-        # load pre-trained stylegan2 model if necessary
-        if decoder_load_path:
+        if decoder_load_path := None:
             self.stylegan_decoder.load_state_dict(
                 torch.load(
                     decoder_load_path, map_location=lambda storage, loc: storage
@@ -297,10 +291,7 @@ class GFPGANv1Clean(nn.Module):
         self.condition_shift = nn.ModuleList()
         for i in range(3, self.log_size + 1):
             out_channels = channels[f"{2**i}"]
-            if sft_half:
-                sft_out_channels = out_channels
-            else:
-                sft_out_channels = out_channels * 2
+            sft_out_channels = out_channels if sft_half else out_channels * 2
             self.condition_scale.append(
                 nn.Sequential(
                     nn.Conv2d(out_channels, out_channels, 3, 1, 1),

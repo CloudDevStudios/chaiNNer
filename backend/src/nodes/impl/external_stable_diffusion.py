@@ -24,19 +24,19 @@ STABLE_DIFFUSION_REQUEST_TIMEOUT = float(
     os.environ.get("STABLE_DIFFUSION_REQUEST_TIMEOUT", "600")
 )  # 10 minutes
 
-STABLE_DIFFUSION_TEXT2IMG_PATH = f"/sdapi/v1/txt2img"
-STABLE_DIFFUSION_IMG2IMG_PATH = f"/sdapi/v1/img2img"
-STABLE_DIFFUSION_INTERROGATE_PATH = f"/sdapi/v1/interrogate"
-STABLE_DIFFUSION_OPTIONS_PATH = f"/sdapi/v1/options"
-STABLE_DIFFUSION_EXTRA_SINGLE_IMAGE_PATH = f"/sdapi/v1/extra-single-image"
-STABLE_DIFFUSION_UPSCALERS_PATH = f"/sdapi/v1/upscalers"
+STABLE_DIFFUSION_TEXT2IMG_PATH = "/sdapi/v1/txt2img"
+STABLE_DIFFUSION_IMG2IMG_PATH = "/sdapi/v1/img2img"
+STABLE_DIFFUSION_INTERROGATE_PATH = "/sdapi/v1/interrogate"
+STABLE_DIFFUSION_OPTIONS_PATH = "/sdapi/v1/options"
+STABLE_DIFFUSION_EXTRA_SINGLE_IMAGE_PATH = "/sdapi/v1/extra-single-image"
+STABLE_DIFFUSION_UPSCALERS_PATH = "/sdapi/v1/upscalers"
 
 
 def _stable_diffusion_url(path):
     return f"{STABLE_DIFFUSION_PROTOCOL}://{STABLE_DIFFUSION_HOST}:{STABLE_DIFFUSION_PORT}{path}"
 
 
-INFO_MSG = f"""
+INFO_MSG = """
 If you want to use external stable diffusion nodes, run the Automatic1111 web ui with the --api flag, like so:
 
 ./webui.sh --api
@@ -46,7 +46,7 @@ STABLE_DIFFUSION_PROTOCOL, STABLE_DIFFUSION_HOST, and STABLE_DIFFUSION_PORT
 environment variables.
 """
 
-TIMEOUT_MSG = f"""Stable diffusion request timeout reached."""
+TIMEOUT_MSG = """Stable diffusion request timeout reached."""
 
 
 class ExternalServiceHTTPError(Exception):
@@ -167,10 +167,7 @@ def get_upscalers():
 
     upscalers_enum = Enum("StableDiffusionUpscaler", upscalers)
 
-    labels = {}
-    for e in upscalers_enum:
-        labels[e] = e.value
-
+    labels = {e: e.value for e in upscalers_enum}
     return upscalers_enum, labels
 
 

@@ -86,11 +86,7 @@ def hue_and_sat(
         # Hue and saturation have no effect on grayscale, so we just need to adjust lightness
         return with_lightness(img, lightness)
 
-    # Preserve alpha channel if it exists
-    alpha = None
-    if c > 3:
-        alpha = img[:, :, 3]
-
+    alpha = img[:, :, 3] if c > 3 else None
     h, l, s = cv2.split(cv2.cvtColor(img[:, :, :3], cv2.COLOR_BGR2HLS))
 
     # Adjust hue

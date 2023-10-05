@@ -95,7 +95,7 @@ def upscale_image_node(
 
     exec_options = to_pytorch_execution_options(get_execution_options())
 
-    logger.debug(f"Upscaling image...")
+    logger.debug("Upscaling image...")
 
     # TODO: Have all super resolution models inherit from something that forces them to use in_nc and out_nc
     in_nc = model.in_nc

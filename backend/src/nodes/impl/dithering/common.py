@@ -34,11 +34,10 @@ def apply_to_all_channels(
 ) -> np.ndarray:
     if image.ndim == 2:
         return one_channel_filter(image, *args, **kwargs)
-    output_image = np.stack(
+    return np.stack(
         [
             one_channel_filter(image[:, :, channel], *args, **kwargs)
             for channel in range(image.shape[2])
         ],
         axis=2,
     )
-    return output_image

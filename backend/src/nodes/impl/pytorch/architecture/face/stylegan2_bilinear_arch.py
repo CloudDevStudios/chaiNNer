@@ -62,10 +62,7 @@ class EqualLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x):
-        if self.bias is None:
-            bias = None
-        else:
-            bias = self.bias * self.lr_mul
+        bias = None if self.bias is None else self.bias * self.lr_mul
         if self.activation == "fused_lrelu":
             out = F.linear(x, self.weight * self.scale)
             out = fused_leaky_relu(out, bias)
@@ -115,11 +112,7 @@ class ModulatedConv2d(nn.Module):
         self.sample_mode = sample_mode
         self.eps = eps
         self.interpolation_mode = interpolation_mode
-        if self.interpolation_mode == "nearest":
-            self.align_corners = None
-        else:
-            self.align_corners = False
-
+        self.align_corners = None if self.interpolation_mode == "nearest" else False
         self.scale = 1 / math.sqrt(in_channels * kernel_size**2)
         # modulation inside each modulated conv
         self.modulation = EqualLinear(
@@ -252,10 +245,7 @@ class ToRGB(nn.Module):
         super(ToRGB, self).__init__()
         self.upsample = upsample
         self.interpolation_mode = interpolation_mode
-        if self.interpolation_mode == "nearest":
-            self.align_corners = None
-        else:
-            self.align_corners = False
+        self.align_corners = None if self.interpolation_mode == "nearest" else False
         self.modulated_conv = ModulatedConv2d(
             in_channels,
             3,
@@ -302,8 +292,7 @@ class ConstantInput(nn.Module):
         self.weight = nn.Parameter(torch.randn(1, num_channel, size, size))
 
     def forward(self, batch):
-        out = self.weight.repeat(batch, 1, 1, 1)
-        return out
+        return self.weight.repeat(batch, 1, 1, 1)
 
 
 class StyleGAN2GeneratorBilinear(nn.Module):
@@ -332,17 +321,17 @@ class StyleGAN2GeneratorBilinear(nn.Module):
         # Style MLP layers
         self.num_style_feat = num_style_feat
         style_mlp_layers = [NormStyleCode()]
-        for i in range(num_mlp):
-            style_mlp_layers.append(
-                EqualLinear(
-                    num_style_feat,
-                    num_style_feat,
-                    bias=True,
-                    bias_init_val=0,
-                    lr_mul=lr_mlp,
-                    activation="fused_lrelu",
-                )
+        style_mlp_layers.extend(
+            EqualLinear(
+                num_style_feat,
+                num_style_feat,
+                bias=True,
+                bias_init_val=0,
+                lr_mul=lr_mlp,
+                activation="fused_lrelu",
             )
+            for _ in range(num_mlp)
+        )
         self.style_mlp = nn.Sequential(*style_mlp_layers)
 
         channels = {
@@ -430,9 +419,7 @@ class StyleGAN2GeneratorBilinear(nn.Module):
         noises = [torch.randn(1, 1, 4, 4, device=device)]
 
         for i in range(3, self.log_size + 1):
-            for _ in range(2):
-                noises.append(torch.randn(1, 1, 2**i, 2**i, device=device))
-
+            noises.extend(torch.randn(1, 1, 2**i, 2**i, device=device) for _ in range(2))
         return noises
 
     def get_latent(self, x):
@@ -442,8 +429,7 @@ class StyleGAN2GeneratorBilinear(nn.Module):
         latent_in = torch.randn(
             num_latent, self.num_style_feat, device=self.constant_input.weight.device
         )
-        latent = self.style_mlp(latent_in).mean(0, keepdim=True)
-        return latent
+        return self.style_mlp(latent_in).mean(0, keepdim=True)
 
     def forward(
         self,
@@ -484,11 +470,10 @@ class StyleGAN2GeneratorBilinear(nn.Module):
                 ]
         # style truncation
         if truncation < 1:
-            style_truncation = []
-            for style in styles:
-                style_truncation.append(
-                    truncation_latent + truncation * (style - truncation_latent)
-                )
+            style_truncation = [
+                truncation_latent + truncation * (style - truncation_latent)
+                for style in styles
+            ]
             styles = style_truncation
         # get style latent with injection
         if len(styles) == 1:
@@ -528,10 +513,7 @@ class StyleGAN2GeneratorBilinear(nn.Module):
 
         image = skip
 
-        if return_latents:
-            return image, latent
-        else:
-            return image, None
+        return (image, latent) if return_latents else (image, None)
 
 
 class ScaledLeakyReLU(nn.Module):
@@ -590,15 +572,13 @@ class EqualConv2d(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x):
-        out = F.conv2d(
+        return F.conv2d(
             x,
             self.weight * self.scale,
             bias=self.bias,
             stride=self.stride,
             padding=self.padding,
         )
-
-        return out
 
     def __repr__(self):
         return (
@@ -636,11 +616,7 @@ class ConvLayer(nn.Sequential):
         self.interpolation_mode = interpolation_mode
         # downsample
         if downsample:
-            if self.interpolation_mode == "nearest":
-                self.align_corners = None
-            else:
-                self.align_corners = False
-
+            self.align_corners = None if self.interpolation_mode == "nearest" else False
             layers.append(
                 torch.nn.Upsample(
                     scale_factor=0.5,

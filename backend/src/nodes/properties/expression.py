@@ -11,9 +11,7 @@ def to_number_json(n: Union[int, float]) -> NumberJson:
         return "NaN"
     if n == float("inf"):
         return "inf"
-    if n == float("-inf"):
-        return "-inf"
-    return n
+    return "-inf" if n == float("-inf") else n
 
 
 def from_number_json(n: NumberJson) -> Union[int, float]:
@@ -21,9 +19,7 @@ def from_number_json(n: NumberJson) -> Union[int, float]:
         return float("nan")
     if n == "inf":
         return float("inf")
-    if n == "-inf":
-        return float("-inf")
-    return n
+    return float("-inf") if n == "-inf" else n
 
 
 ExpressionJson = Union[
@@ -167,9 +163,10 @@ def match(
     *args: Tuple[ExpressionJson, str | None, ExpressionJson],
     default: ExpressionJson | None = None,
 ) -> ExpressionJson:
-    arms: List[MatchArmJson] = []
-    for pattern, binding, to in args:
-        arms.append({"pattern": pattern, "binding": binding, "to": to})
+    arms: List[MatchArmJson] = [
+        {"pattern": pattern, "binding": binding, "to": to}
+        for pattern, binding, to in args
+    ]
     if default is not None:
         arms.append({"pattern": "any", "binding": None, "to": default})
     return {"type": "match", "of": of, "arms": arms}

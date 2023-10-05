@@ -60,11 +60,7 @@ def upscale(
     face_helper.align_warp_face()
 
     should_use_fp16 = exec_options.fp16 and face_model.supports_fp16
-    if should_use_fp16:
-        face_model = face_model.half()
-    else:
-        face_model = face_model.float()
-
+    face_model = face_model.half() if should_use_fp16 else face_model.float()
     # face restoration
     for cropped_face in face_helper.cropped_faces:
         # prepare data
@@ -180,16 +176,13 @@ def face_upscale_node(
                 model_rootpath=download_path,
             )
 
-            result = upscale(
+            return upscale(
                 img,
                 background_img,
                 face_helper,
                 face_model,
                 weight,
             )
-
-            return result
-
     except Exception as e:
         logger.error(f"Face Upscale failed: {e}")
         face_helper = None

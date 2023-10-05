@@ -23,12 +23,7 @@ def default_init_weights(module_list, scale=1, bias_fill=0, **kwargs):
         module_list = [module_list]
     for module in module_list:
         for m in module.modules():
-            if isinstance(m, nn.Conv2d):
-                init.kaiming_normal_(m.weight, **kwargs)
-                m.weight.data *= scale
-                if m.bias is not None:
-                    m.bias.data.fill_(bias_fill)
-            elif isinstance(m, nn.Linear):
+            if isinstance(m, (nn.Conv2d, nn.Linear)):
                 init.kaiming_normal_(m.weight, **kwargs)
                 m.weight.data *= scale
                 if m.bias is not None:
@@ -185,9 +180,7 @@ class StyleConv(nn.Module):
         out = out + self.weight * noise
         # add bias
         out = out + self.bias
-        # activation
-        out = self.activate(out)
-        return out
+        return self.activate(out)
 
 
 class ToRGB(nn.Module):
@@ -243,8 +236,7 @@ class ConstantInput(nn.Module):
         self.weight = nn.Parameter(torch.randn(1, num_channel, size, size))
 
     def forward(self, batch):
-        out = self.weight.repeat(batch, 1, 1, 1)
-        return out
+        return self.weight.repeat(batch, 1, 1, 1)
 
 
 class StyleGAN2GeneratorClean(nn.Module):
@@ -264,7 +256,7 @@ class StyleGAN2GeneratorClean(nn.Module):
         # Style MLP layers
         self.num_style_feat = num_style_feat
         style_mlp_layers = [NormStyleCode()]
-        for i in range(num_mlp):
+        for _ in range(num_mlp):
             style_mlp_layers.extend(
                 [
                     nn.Linear(num_style_feat, num_style_feat, bias=True),
@@ -353,9 +345,7 @@ class StyleGAN2GeneratorClean(nn.Module):
         noises = [torch.randn(1, 1, 4, 4, device=device)]
 
         for i in range(3, self.log_size + 1):
-            for _ in range(2):
-                noises.append(torch.randn(1, 1, 2**i, 2**i, device=device))
-
+            noises.extend(torch.randn(1, 1, 2**i, 2**i, device=device) for _ in range(2))
         return noises
 
     def get_latent(self, x):
@@ -365,8 +355,7 @@ class StyleGAN2GeneratorClean(nn.Module):
         latent_in = torch.randn(
             num_latent, self.num_style_feat, device=self.constant_input.weight.device
         )
-        latent = self.style_mlp(latent_in).mean(0, keepdim=True)
-        return latent
+        return self.style_mlp(latent_in).mean(0, keepdim=True)
 
     def forward(
         self,
@@ -403,11 +392,10 @@ class StyleGAN2GeneratorClean(nn.Module):
                 ]
         # style truncation
         if truncation < 1:
-            style_truncation = []
-            for style in styles:
-                style_truncation.append(
-                    truncation_latent + truncation * (style - truncation_latent)
-                )
+            style_truncation = [
+                truncation_latent + truncation * (style - truncation_latent)
+                for style in styles
+            ]
             styles = style_truncation
         # get style latents with injection
         if len(styles) == 1:
@@ -447,7 +435,4 @@ class StyleGAN2GeneratorClean(nn.Module):
 
         image = skip
 
-        if return_latents:
-            return image, latent
-        else:
-            return image, None
+        return (image, latent) if return_latents else (image, None)

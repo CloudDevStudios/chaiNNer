@@ -24,7 +24,7 @@ class ColorJson(TypedDict):
 
 class Color:
     def __init__(self, value: Tuple[float, ...]) -> None:
-        assert len(value) >= 1
+        assert value
         self.value: Tuple[float, ...] = value
 
     @property

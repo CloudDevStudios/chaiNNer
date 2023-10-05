@@ -142,16 +142,8 @@ def upscale_node(
     upscaler_2: Enum,
     upscaler_2_visibility: float,
 ) -> np.ndarray:
-    if mode == UpscalerMode.SCALE_BY:
-        resize_mode = 0
-    else:
-        resize_mode = 1
-
-    if use_second_upscaler:
-        u2 = upscaler_2.value
-    else:
-        u2 = "None"
-
+    resize_mode = 0 if mode == UpscalerMode.SCALE_BY else 1
+    u2 = upscaler_2.value if use_second_upscaler else "None"
     request_data = {
         "resize_mode": resize_mode,
         "show_extras_results": False,
@@ -177,11 +169,7 @@ def upscale_node(
     rh, rw, _ = get_h_w_c(result)
     ratio_w = width / iw
     ratio_h = height / ih
-    if ratio_w > ratio_h:
-        larger_ratio = ratio_w
-    else:
-        larger_ratio = ratio_h
-
+    larger_ratio = max(ratio_w, ratio_h)
     if mode == UpscalerMode.SCALE_TO:
         if crop:
             assert (rw, rh) == (

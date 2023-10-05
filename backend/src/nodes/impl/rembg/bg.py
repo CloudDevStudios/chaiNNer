@@ -35,7 +35,7 @@ def alpha_matting_cutout(
     background_threshold: int,
     erode_structure_size: int,
 ) -> PILImage:
-    if img.mode == "RGBA" or img.mode == "CMYK":
+    if img.mode in ["RGBA", "CMYK"]:
         img = img.convert("RGB")
 
     npimg = np.asarray(img)
@@ -72,8 +72,7 @@ def alpha_matting_cutout(
 
 def naive_cutout(img: PILImage, mask: PILImage) -> PILImage:
     empty = Image.new("RGBA", (img.size), 0)
-    cutout = Image.composite(img, empty, mask)
-    return cutout
+    return Image.composite(img, empty, mask)
 
 
 def get_concat_v_multi(imgs: List[PILImage]) -> PILImage:
@@ -149,7 +148,7 @@ def remove_bg(
         cutouts.append(cutout)
 
     cutout = pimg
-    if len(cutouts) > 0:
+    if cutouts:
         cutout = get_concat_v_multi(cutouts)
 
     return cvtColor(normalize(np.asarray(cutout)), COLOR_RGBA2BGRA), normalize(np.asarray(mask))  # type: ignore  pylint: disable=undefined-loop-variable

@@ -171,6 +171,4 @@ def cf_laplacian(image, epsilon=1e-7, radius=1, is_known=None):
 
     _cf_laplacian(image, epsilon, radius, values, indices, indptr, is_known)
 
-    L = scipy.sparse.csr_matrix((values.ravel(), indices, indptr), (n, n))
-
-    return L
+    return scipy.sparse.csr_matrix((values.ravel(), indices, indptr), (n, n))

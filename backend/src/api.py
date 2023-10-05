@@ -237,15 +237,13 @@ class PackageRegistry:
                         importlib.import_module(module, package=None)
                     except ImportError as e:
                         import_errors.append(e)
-                    except RuntimeError as e:
-                        logger.warning(f"Failed to load {module} ({file_path}): {e}")
-                    except ValueError as e:
+                    except (RuntimeError, ValueError) as e:
                         logger.warning(f"Failed to load {module} ({file_path}): {e}")
                     except TypeMismatchError as e:
                         logger.error(e)
                         type_errors.append(e)
 
-        if len(type_errors) > 0:
+        if type_errors:
             raise RuntimeError(f"Type errors occurred in {len(type_errors)} node(s)")
 
         logger.info(import_errors)
@@ -262,9 +260,6 @@ class PackageRegistry:
             for category in package.categories:
                 for sub in category.node_groups:
                     for node in sub.nodes:
-                        if node.schema_id in self.nodes:
-                            # print warning
-                            pass
                         self.nodes[node.schema_id] = node, sub
 
 

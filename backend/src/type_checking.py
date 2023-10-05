@@ -80,7 +80,7 @@ def eval_type(t: str | _Ty, __globals: dict[str, Any]):
 
 
 def union_types(types: List[_Ty]) -> _Ty:
-    assert len(types) > 0
+    assert types
     t: Any = types[0]
     for t2 in types[1:]:
         t = Union[t, cast(Any, t2)]
@@ -98,10 +98,7 @@ def union_to_set(t: _Ty) -> Set[_Ty]:
 
 
 def is_subset_of(a: _Ty, b: _Ty) -> bool:
-    if a == b:
-        return True
-
-    return union_to_set(a).issubset(union_to_set(b))
+    return True if a == b else union_to_set(a).issubset(union_to_set(b))
 
 
 def get_type_annotations(fn: Callable) -> Dict[str, _Ty]:
@@ -111,17 +108,17 @@ def get_type_annotations(fn: Callable) -> Dict[str, _Ty]:
     if ann is None:
         return {}
 
-    type_annotations: Dict[str, _Ty] = {}
-    for k, v in ann.items():
-        type_annotations[k] = eval_type(v, fn.__globals__)
+    type_annotations: Dict[str, _Ty] = {
+        k: eval_type(v, fn.__globals__) for k, v in ann.items()
+    }
     return type_annotations
 
 
 def validate_return_type(return_type: _Ty, outputs: list[BaseOutput]):
-    if len(outputs) == 0:
+    if not outputs:
         if return_type is not None:  # type: ignore
             raise TypeMismatchError(
-                f"Return type should be 'None' because there are no outputs"
+                "Return type should be 'None' because there are no outputs"
             )
     elif len(outputs) == 1:
         o = outputs[0]
@@ -172,7 +169,7 @@ def typeValidateSchema(
 
     arg_spec = inspect.getfullargspec(wrapped_func)
     for arg in arg_spec.args:
-        if not arg in ann:
+        if arg not in ann:
             raise TypeMismatchError(f"Missing type annotation for '{arg}'")
 
     if node_type == "iteratorHelper":
@@ -189,7 +186,7 @@ def typeValidateSchema(
             )
 
     if arg_spec.varargs is not None:
-        if not arg_spec.varargs in ann:
+        if arg_spec.varargs not in ann:
             raise TypeMismatchError(f"Missing type annotation for '{arg_spec.varargs}'")
         va_type = ann.pop(arg_spec.varargs)
 
@@ -208,12 +205,11 @@ def typeValidateSchema(
                     )
 
             # append to total
-            if associated_type is not None:
-                if total is not None:
-                    total.append(associated_type)
-            else:
+            if associated_type is None:
                 total = None
 
+            elif total is not None:
+                total.append(associated_type)
         if total is not None:
             total_type = union_types(total)
             if total_type != va_type:

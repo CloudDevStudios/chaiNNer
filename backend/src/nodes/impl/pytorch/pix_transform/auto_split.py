@@ -35,9 +35,7 @@ class _PixTiler(Tiler):
 
 
 def _as_3d(img: np.ndarray) -> np.ndarray:
-    if img.ndim == 3:
-        return img
-    return np.expand_dims(img, axis=2)
+    return img if img.ndim == 3 else np.expand_dims(img, axis=2)
 
 
 def pix_transform_auto_split(
@@ -58,7 +56,7 @@ def pix_transform_auto_split(
 
     assert (
         g_h > s_h and g_w > s_w
-    ), f"The guide image mus be larger than the source image."
+    ), "The guide image mus be larger than the source image."
     assert (
         g_w / s_w == g_w // s_w and g_w / s_w == g_h / s_h
     ), "The size of the guide image must be an integer multiple of the size of the source image (e.g. 2x, 3x, 4x, ...)."

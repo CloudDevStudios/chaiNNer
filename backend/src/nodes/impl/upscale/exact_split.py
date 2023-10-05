@@ -107,13 +107,15 @@ def _exact_split_into_regions(
 
     result: List[Tuple[Region, Padding]] = []
     for y in y_segments:
-        for x in x_segments:
-            result.append(
-                (
-                    Region(x.start, y.start, x.length, y.length),
-                    Padding(y.startPadding, x.endPadding, y.endPadding, x.startPadding),
-                )
+        result.extend(
+            (
+                Region(x.start, y.start, x.length, y.length),
+                Padding(
+                    y.startPadding, x.endPadding, y.endPadding, x.startPadding
+                ),
             )
+            for x in x_segments
+        )
     return result
 
 
